@@ -1,0 +1,6 @@
+{:lein true
+ :builds {:app
+          {:target :browser
+           :modules {:main {:entries [yggdrasil-playground.core]}}
+           :output-dir "resources/public/js/compiled"
+           :compiler-options {:infer-externs :auto}}}}
