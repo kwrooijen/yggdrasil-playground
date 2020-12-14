@@ -5,7 +5,9 @@
    [reitit.ring :as ring]
    [ring.middleware.defaults :refer [wrap-defaults]]
    [ring.middleware.session.cookie]
+   [taoensso.sente.server-adapters.aleph :refer (get-sch-adapter)]
    [yggdrasil-playground.html]
+   [yggdrasil.core :refer [handle-atom]]
    [yggdrasil.handler]
    [yggdrasil.sente])
   (:gen-class))
@@ -17,16 +19,15 @@
 
 (defn home-handler [request]
   (yggdrasil.handler/handler
-   request ::some-key
+   request ::page-home
    (default-template yggdrasil-playground.html/page-home)))
 
 (def routes
   [["/"
     {:get {:handler home-handler}}]
    ["/chsk"
-    {:get {:handler yggdrasil.sente/handler-get}
-     :post {:handler yggdrasil.sente/handler-post}}]
-
+    {:get {:handler yggdrasil.sente/ws-handler-get}
+     :post {:handler yggdrasil.sente/ws-handler-post}}]
    ["/js/compiled/main.js" (ring/create-resource-handler)]
    ["/favicon.ico" (ring/create-resource-handler)]])
 
@@ -40,7 +41,7 @@
       (assoc-in [:session :store] cookie-session-store)))
 
 (def route-opts
-  {:data {:middleware [#(wrap-defaults % site-defaults)]}})
+  {:data {:middleware [[wrap-defaults site-defaults]]}})
 
 (def app
   (ring/ring-handler
@@ -48,7 +49,12 @@
 
 (defn -main [& args]
   (http/start-server #'app {:port 3000})
-  (yggdrasil.sente/start-router))
+  (yggdrasil.sente/start! (get-sch-adapter)))
+
+(defmethod handle-atom :counter [k request state]
+  (swap! (:foo state) + @(:counter state))
+  ;; (println state)
+  )
 
 (comment
   (-main)
